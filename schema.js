@@ -25,8 +25,7 @@ const projectSchema=new mongoose.Schema({
     required:true
   },
   imageUrl:{
-    type:[String],
-    required:true
+    type:String
   },
   link:{
     type:String,

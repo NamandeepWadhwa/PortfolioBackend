@@ -5,47 +5,77 @@ dotenv.config();
 const cors=require('cors');
 const otpVerification=require('./optVerification');
 const mail = require('./mailSender');
-app.use(cors());
-app.use(express.json());
+const fileUpload=require('express-fileupload');
 const project=require('./project');
 const schema=require('./schema');
 const user=require('./user');
 const otpsender=require('./mailSender');
 const sendEmail=otpsender.sendEmail;
+const jwt=require('jsonwebtoken');
+const passport=require('passport');
+const passportJWT=require('passport-jwt');
+let ExtractJWT=passportJWT.ExtractJwt; 
+let JWTStrategy=passportJWT.Strategy;
+let jwtOptions={
+    jwtFromRequest:ExtractJWT.fromAuthHeaderWithScheme('JWT'),
+    secretOrKey:process.env.SECRET_KEY
+};
+let strategy=new JWTStrategy(jwtOptions,function (
+    jwt_payload, next) {
+       
+        if(jwt_payload){
+            next(null,{
+                _id:jwt_payload._id,
+                userName:jwt_payload.userName
+            });
+           
+        } else{
+            
+            next(null,false);
+          }
+    }
+);
+passport.use(strategy);
+app.use(passport.initialize());
+app.use(cors());
+app.use(express.json());
+app.use(fileUpload());
 const HTTP_PORT=process.env.PORT || 8080;
 
 app.get('/api/projects',(req,res)=>{
     project.getProjects().then((data)=>{
      
-        res.json(data);
+        res.status(200).json(data);
     }).catch((err)=>{
-      console.log(err);
+      
         res.status(500).json({error:err});
     });
 });
-app.post('/api/projects',(req,res)=>{
+app.post('/api/projects',passport.authenticate('jwt', { session: false }),(req,res)=>{
     project.addProject(req.body).then(()=>{
-        res.json({message:"project added successfully"});
+        
+        res.status(200).json({message:"project added successfully"});
     }).catch((err)=>{
-        res.status(500).json({error:err});
+        console.log(err);
+        res.status(500).json("Error while adding the project");
     });
 });
-app.delete('/api/projects/:id',(req,res)=>{
+app.delete('/api/projects/:title',passport.authenticate('jwt', { session: false }),(req,res)=>{
     project.deleteProject(req.params.id).then(()=>{
         res.json({message:"project deleted successfully"});
     }).catch((err)=>{
-        res.status(500).json({error:err});
+        res.status(500).json("Error while deleting the project");
     });
 });
-app.put('/api/projects/:id',(req,res)=>{
+app.post('/api/projects/:title',passport.authenticate('jwt', { session: false }),(req,res)=>{
     project.updateProject(req.params.title,req.body).then(()=>{
         res.json({message:"project updated successfully"});
     }).catch((err)=>{
-        res.status(500).json({error:err});
+        res.status(500).json("Error while updating the project");
     });
 });
 
-app.post('/api/register',(req,res)=>{
+app.post('/api/register',passport.authenticate('jwt', { session: false }),(req,res)=>{
 user.registerUser(req.body).then(()=>{
     res.json({message:"user registered successfully"});
 }).catch((err)=>{
@@ -54,7 +84,9 @@ user.registerUser(req.body).then(()=>{
 })
 app.post('/api/login',(req,res)=>{
     user.checkUser(req.body).then((data)=>{
-        res.json({message:"user logged in successfully",dataUser:data});
+        let payload={_id:data._id,userName:data.userName};
+        let token=jwt.sign(payload,jwtOptions.secretOrKey);
+        res.json({message:"user logged in successfully",userToken:token});
     }).catch((err)=>{
         res.status(500).json({error:err});
     });
@@ -69,19 +101,19 @@ app.get('/api/users/:userName',(req,res)=>{
         res.status(500).json({error:err});
     });
 })
-app.get('/api/getOtp/:userName',(req,res)=>{
+app.get('/api/getOtp/:userName',passport.authenticate('jwt', { session: false }),(req,res)=>{
     let params=req.params;
-    console.log(req.params);
+   
     
   
     otpVerification.getOtp(params.userName).then((otpPayload)=>{
         res.status(200).json({otp:otpPayload.otp});
     }).catch((err)=>{
-        res.status(500).json({error:err});
+        res.status(500).json({message:err});
     });
 })
 
-app.get('/api/verifyOtp/:userName/:otp/',(req,res)=>{
+app.get('/api/verifyOtp/:userName/:otp/',passport.authenticate('jwt', { session: false }),(req,res)=>{
     let params=req.params;
     
    
@@ -99,6 +131,19 @@ app.put('/api/sendEmail/',(req,res)=>{
     }).catch((err)=>{
         res.status(500).json({error:err});
     });
+});
+app.post('/api/upload/image',(req,res)=>{
+   
+   if(req.files===null || req.files===undefined){
+
+         res.status(400).json("No files were uploaded");}
+         else{
+         
+            let uniqueName=Date.now()+req.files.image.name;
+                let image=req.files.image;
+                image.mv('./images/'+uniqueName);
+               return res.json({imageUrl:uniqueName});
+         }
 });
 app.use((req,res)=>{
     res.status(404).send("Page not found");

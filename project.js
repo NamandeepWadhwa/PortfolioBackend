@@ -14,15 +14,20 @@ module.exports.getProjects=function(){
 
 }
 module.exports.addProject=function(newProject){
-  const project=new project(newProject);
-return new Promise ((resolve,reject)=>{ 
-  project.save().then((data)=>{
-    resolve();
-  }).catch((err)=>{
-    reject(err);
+ const addNewProject =new project({
+  title:newProject.title,
+  description:newProject.description,
+  imageUrl:newProject.imageUrl,
+  link:newProject.link
+ });
+  return new Promise((resolve,reject)=>{
+    addNewProject.save().then(()=>{
+      resolve();
+    }).catch((err)=>{
+      
+      reject(err);
+    });
   });
-
-});
 }
 module.exports.deleteProject=function(id){
   return new Promise((resolve,reject)=>{
@@ -33,20 +38,26 @@ module.exports.deleteProject=function(id){
     });
   });
 }
-module.exports.updateProject=function(id,updatedProject){
+module.exports.updateProject=function(imageTitle,updatedProject){
   return new Promise((resolve,reject)=>{
-    project.updateOne({_id:id},updatedProject).then(()=>{
+    project.updateOne({title:imageTitle},{
+      title:updatedProject.title,
+      description:updatedProject.description,
+      imageUrl:updatedProject.imageUrl,
+      link:updatedProject.link
+    
+    }).then(()=>{
       resolve();
     }).catch((err)=>{
       reject(err);
     });
   });
 }
-module.exports.registerUser=function(newUer){
+module.exports.registerUser=function(newUser){
  return new Promise ((resolve,reject)=>{
    bcrypt.hash(newUser.passowrd,10).then(hash=>{
     newUser.password=hash;
-    newUer.save().then(()=>{
+    newUser.save().then(()=>{
       resolve("User"+newUser.username+"created successfully");
     })
 

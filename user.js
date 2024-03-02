@@ -30,13 +30,15 @@ module.exports.registerUser=function(newUser){
   })
  };
  module.exports.checkUser=function(userData){
+
  
    return new Promise ((resolve,reject)=>{
      users.findOne({userName:userData.userName}).then((user)=>{
        if(user){
          bcrypt.compare(userData.password,user.password).then((res)=>{
            if(res){
-             resolve("User "+userData.userName+"logged in successfully");
+           
+             resolve(user);
            }else{
              reject("User "+userData.userName+"not found");
            }
