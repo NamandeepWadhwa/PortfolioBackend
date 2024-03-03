@@ -1,5 +1,6 @@
 const express=require('express');
 const app=express();
+const path = require('path');
 const dotenv = require("dotenv");
 dotenv.config();
 const cors=require('cors');
@@ -40,10 +41,15 @@ app.use(passport.initialize());
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload());
+
+ const images=path.join(__dirname,'images/');
+
+
 const HTTP_PORT=process.env.PORT || 8080;
 
 app.get('/api/projects',(req,res)=>{
     project.getProjects().then((data)=>{
+    
      
         res.status(200).json(data);
     }).catch((err)=>{
@@ -51,26 +57,43 @@ app.get('/api/projects',(req,res)=>{
         res.status(500).json({error:err});
     });
 });
-app.post('/api/projects',passport.authenticate('jwt', { session: false }),(req,res)=>{
-    project.addProject(req.body).then(()=>{
-        
-        res.status(200).json({message:"project added successfully"});
+app.get('/api/projects/:id',(req,res)=>{
+
+    
+   let id=req.params.id;
+    project.getProjectById(id).then((data)=>{
+        res.status(200).json(data);
     }).catch((err)=>{
-        console.log(err);
+     
+        res.status(500).json({error:err});
+    });
+})
+app.post('/api/projects',passport.authenticate('jwt', { session: false }),(req,res)=>{
+    
+    project.addProject(req.body).then((data)=>{
+
+        
+        res.status(200).json({project:data});
+    }).catch((err)=>{
+       
         res.status(500).json("Error while adding the project");
     });
 });
-app.delete('/api/projects/:title',passport.authenticate('jwt', { session: false }),(req,res)=>{
+app.delete('/api/projects/:id',passport.authenticate('jwt', { session: false }),(req,res)=>{
+    console.log(req.params.id);
     project.deleteProject(req.params.id).then(()=>{
         res.json({message:"project deleted successfully"});
     }).catch((err)=>{
         res.status(500).json("Error while deleting the project");
     });
 });
-app.post('/api/projects/:title',passport.authenticate('jwt', { session: false }),(req,res)=>{
-    project.updateProject(req.params.title,req.body).then(()=>{
+app.post('/api/projects/:id',passport.authenticate('jwt', { session: false }),(req,res)=>{
+   
+    project.updateProject(req.params.id,req.body).then(()=>{
+       
         res.json({message:"project updated successfully"});
     }).catch((err)=>{
+        
         res.status(500).json("Error while updating the project");
     });
 });
@@ -138,12 +161,18 @@ app.post('/api/upload/image',(req,res)=>{
 
          res.status(400).json("No files were uploaded");}
          else{
+           
          
             let uniqueName=Date.now()+req.files.image.name;
                 let image=req.files.image;
                 image.mv('./images/'+uniqueName);
                return res.json({imageUrl:uniqueName});
          }
+});
+app.get('/api/images/:imageName',(req,res)=>{
+    let imageName=req.params.imageName;
+    let imagePtah=path.join(images+imageName);
+   res.sendFile(imagePtah);
 });
 app.use((req,res)=>{
     res.status(404).send("Page not found");

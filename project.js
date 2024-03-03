@@ -21,8 +21,8 @@ module.exports.addProject=function(newProject){
   link:newProject.link
  });
   return new Promise((resolve,reject)=>{
-    addNewProject.save().then(()=>{
-      resolve();
+    addNewProject.save().then((data)=>{
+      resolve(data);
     }).catch((err)=>{
       
       reject(err);
@@ -32,26 +32,41 @@ module.exports.addProject=function(newProject){
 module.exports.deleteProject=function(id){
   return new Promise((resolve,reject)=>{
     project.deleteOne({_id:id}).then(()=>{
+      console.log("deleted");
       resolve();
     }).catch((err)=>{
       reject(err);
     });
   });
 }
-module.exports.updateProject=function(imageTitle,updatedProject){
+module.exports.updateProject=function(id,updatedProject){
   return new Promise((resolve,reject)=>{
-    project.updateOne({title:imageTitle},{
+    console.log(updatedProject,id);
+    project.updateOne({_id:id},{
       title:updatedProject.title,
       description:updatedProject.description,
       imageUrl:updatedProject.imageUrl,
       link:updatedProject.link
     
-    }).then(()=>{
+    }).then((data)=>{
+      
+     console.log(data);
       resolve();
+   
     }).catch((err)=>{
       reject(err);
     });
   });
+}
+module.exports.getProjectById=function(id){
+  return new Promise((resolve,reject)=>{
+    project.findOne({_id:id}).then((data)=>{
+      resolve(data);
+    }).catch((err)=>{
+      reject(err);
+    });
+  });
+
 }
 module.exports.registerUser=function(newUser){
  return new Promise ((resolve,reject)=>{
