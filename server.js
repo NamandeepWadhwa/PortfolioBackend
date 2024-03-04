@@ -11,11 +11,11 @@ const project=require('./project');
 const schema=require('./schema');
 const user=require('./user');
 const otpsender=require('./mailSender');
-const sendEmail=otpsender.sendEmail;
 const jwt=require('jsonwebtoken');
 const passport=require('passport');
 const passportJWT=require('passport-jwt');
 let ExtractJWT=passportJWT.ExtractJwt; 
+const skills=require('./skills');
 let JWTStrategy=passportJWT.Strategy;
 let jwtOptions={
     jwtFromRequest:ExtractJWT.fromAuthHeaderWithScheme('JWT'),
@@ -43,6 +43,7 @@ app.use(express.json());
 app.use(fileUpload());
 
  const images=path.join(__dirname,'images/');
+ const resumePath=path.join(__dirname,'resume/');
 
 
 const HTTP_PORT=process.env.PORT || 8080;
@@ -169,11 +170,53 @@ app.post('/api/upload/image',(req,res)=>{
                return res.json({imageUrl:uniqueName});
          }
 });
+
 app.get('/api/images/:imageName',(req,res)=>{
     let imageName=req.params.imageName;
     let imagePtah=path.join(images+imageName);
    res.sendFile(imagePtah);
 });
+
+
+app.get('/api/skills',(req,res)=>{
+    skills.getSkills().then((data)=>{
+        res.status(200).json(data);
+    }).catch((err)=>{
+        res.status(500).json({error:err});
+    });
+})
+app.post('/api/skills',passport.authenticate('jwt', { session: false }),(req,res)=>{
+
+    skills.addSkill(req.body).then((data)=>{
+        res.status(200).json({skill:data});
+    }).catch((err)=>{
+        console.log(err);
+        res.status(500).json({error:err});
+    });
+});
+
+app.post('/api/skills/:id',passport.authenticate('jwt', { session: false }),(req,res)=>{
+    skills.updateSkill(req.params.id,req.body).then((data)=>{
+        res.status(200).json(data);
+    }).catch((err)=>{
+        res.status(500).json({error:err});
+    });
+});
+app.delete('/api/skills/:id',passport.authenticate('jwt', { session: false }),(req,res)=>{
+    skills.deleteSkill(req.params.id).then((data)=>{
+        res.status(200).json(data);
+    }).catch((err)=>{
+        res.status(500).json({error:err});
+    });
+});
+app.get('/api/skills/:id',(req,res)=>{
+    skills.getSkillById(req.params.id).then((data)=>{
+        res.status(200).json(data);
+    }).catch((err)=>{
+        res.status(500).json({error:err});
+    });
+})
+
 app.use((req,res)=>{
     res.status(404).send("Page not found");
 });

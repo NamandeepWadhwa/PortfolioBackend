@@ -31,7 +31,22 @@ const projectSchema=new mongoose.Schema({
     type:String,
     required:true
   }
-})
+});
+const skiilsSchema=new mongoose.Schema({
+  skill:{
+    type:String,
+    required:true
+  },
+  category:{
+    type:String,
+    required:true
+  },
+  imageUrl:{
+    type:String
+  
+  }
+
+});
 const optSchema=new mongoose.Schema({
   
   userName:{
@@ -53,6 +68,7 @@ const optSchema=new mongoose.Schema({
 let project=mongoose.model('project',projectSchema);
 let users=mongoose.model('user',userSchema);
 let otp=mongoose.model('otp',optSchema);
+let skills=mongoose.model('skills',skiilsSchema);
 
 
  
@@ -70,4 +86,6 @@ module.exports.mdoels={
   users,
   project,
   otp,
+  skills,
+
 }
